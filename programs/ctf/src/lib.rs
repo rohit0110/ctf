@@ -25,6 +25,14 @@ pub mod ctf {
         Ok(())
     }
 
+    pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
+        let player = &mut ctx.accounts.player;
+
+        player.health = 100; // Default health
+
+        Ok(())
+    }
+
     pub fn start_game(ctx: Context<UpdateGameState>) -> Result<()> {
         let game = &mut ctx.accounts.game;
     
@@ -65,6 +73,50 @@ pub mod ctf {
         Ok(())
     }
     
+    // player var is used for player account in game, user var is used for user signing the transaction
+    pub fn capture_flag(ctx: Context<CaptureFlag>) -> Result<()> {
+        let game = &mut ctx.accounts.game;
+        let user = &mut ctx.accounts.user;
+        let player = &mut ctx.accounts.player;
+        let clock = Clock::get()?;
+    
+        // Ensure the game is Active
+        require!(game.state == GameState::Active, CustomError::GameNotActive);
+    
+        // (Optional) Check time bounds
+        let now = clock.unix_timestamp;
+        require!(now < game.start_time + game.duration, CustomError::GameOver);
+    
+        // Ensure player has enough health
+        require!(
+            player.health >= game.base_capture_cost,
+            CustomError::NotEnoughHealth
+        );
+        // Deduct health
+        player.health -= game.base_capture_cost;
+
+        // Charge lamports from player
+        let ix = anchor_lang::solana_program::system_instruction::transfer(
+            &user.key(),
+            &ctx.accounts.admin.key(),
+            game.base_fee_lamports,
+        );
+        anchor_lang::solana_program::program::invoke(
+            &ix,
+            &[
+                user.to_account_info(),
+                ctx.accounts.admin.to_account_info(),
+            ],
+        )?;
+    
+        // Update game state
+        game.current_flag_holder = user.key();
+        game.global_captures += 1;
+    
+        Ok(())
+    }
+    
+     
     
 }
 
@@ -90,6 +142,33 @@ pub struct UpdateGameState<'info> {
     pub admin: Signer<'info>,
 }
 
+#[derive(Accounts)]
+pub struct CaptureFlag<'info> {
+    #[account(mut, seeds = [b"game"], bump)]
+    pub game: Account<'info, Game>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(mut, seeds = [b"player", user.key().as_ref()], bump)]
+    pub player: Account<'info, Player>,
+    #[account(mut)]
+    pub admin: SystemAccount<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct InitializePlayer<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(
+        init,
+        payer = user,
+        space = 8 + Player::INIT_SPACE,
+        seeds = [b"player", user.key().as_ref()],
+        bump
+    )]
+    pub player: Account<'info, Player>,
+    pub system_program: Program<'info, System>,
+}
 
 #[account]
 #[derive(InitSpace)]
@@ -101,6 +180,12 @@ pub struct Game {
     pub base_fee_lamports: u64,
     pub global_captures: u64,
     pub current_flag_holder: Pubkey,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct Player {
+    pub health: u64,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
@@ -122,5 +207,7 @@ pub enum CustomError {
     InvalidStateTransition,
     #[msg("Game already completed.")]
     AlreadyCompleted,
+    #[msg("Not enough health to capture the flag.")]
+    NotEnoughHealth,
 }
 
