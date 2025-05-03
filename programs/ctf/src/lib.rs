@@ -21,6 +21,7 @@ pub mod ctf {
         game.base_fee_lamports = base_fee_lamports;
         game.global_captures = 0;
         game.current_flag_holder = Pubkey::default();
+        game.bump = ctx.bumps.game;
 
         Ok(())
     }
@@ -60,7 +61,7 @@ pub mod ctf {
     }
     
 
-    pub fn end_game(ctx: Context<UpdateGameState>) -> Result<()> {
+    pub fn end_game(ctx: Context<EndGame>) -> Result<()> {
         let game = &mut ctx.accounts.game;
     
         require!(
@@ -70,8 +71,48 @@ pub mod ctf {
     
         game.state = GameState::Completed;
     
+        let winner = game.current_flag_holder;
+        let winner_share = game.prize_pool * 80 / 100;
+        let protocol_share = game.prize_pool - winner_share;
+    
+        let seeds = &[b"game".as_ref(), &[game.bump]];
+        let signer_seeds = &[&seeds[..]];
+    
+        // Transfer 80% to winner
+        let game_key = game.key(); // Clone the game key to avoid borrowing issues
+        let winner_transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
+            &game_key,
+            &winner,
+            winner_share,
+        );
+        anchor_lang::solana_program::program::invoke_signed(
+            &winner_transfer_ix,
+            &[
+                game.to_account_info(),
+                ctx.accounts.winner.to_account_info(),
+            ],
+            signer_seeds,
+        )?;
+    
+        let protocol_transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
+            &game_key, // Use the cloned game key
+            &ctx.accounts.admin.key(),
+            protocol_share,
+        );
+        anchor_lang::solana_program::program::invoke_signed(
+            &protocol_transfer_ix,
+            &[
+                game.to_account_info(),
+                ctx.accounts.admin.to_account_info(),
+            ],
+            signer_seeds,
+        )?;
+    
+        game.prize_pool = 0;
+    
         Ok(())
     }
+    
     
     // player var is used for player account in game, user var is used for user signing the transaction
     pub fn capture_flag(ctx: Context<CaptureFlag>) -> Result<()> {
@@ -86,32 +127,48 @@ pub mod ctf {
         // (Optional) Check time bounds
         let now = clock.unix_timestamp;
         require!(now < game.start_time + game.duration, CustomError::GameOver);
+
+        // Check if the game is in the final phase and extend the duration if needed
+        if game.duration - (now - game.start_time) <= 300 {
+            game.duration += 300; // extend by 5 minutes
+        }
+        game.last_capture_time = now;
     
         // Ensure player has enough health
-        require!(
-            player.health >= game.base_capture_cost,
-            CustomError::NotEnoughHealth
+        let dynamic_cost = std::cmp::min(
+            game.base_capture_cost + 5 * (game.global_captures / 10),
+            30,
         );
-        // Deduct health
-        player.health -= game.base_capture_cost;
+        
+        require!(player.health >= dynamic_cost, CustomError::NotEnoughHealth);
+        player.health -= dynamic_cost;
+
+        // Update player state based on health
+        if player.health < 15 {
+            player.state = PlayerState::Eliminated;
+        } else if player.health < 25 {
+            player.state = PlayerState::Critical;
+        } else {
+            player.state = PlayerState::Active;
+        }
+        
+        
 
         // Charge lamports from player
         let ix = anchor_lang::solana_program::system_instruction::transfer(
             &user.key(),
-            &ctx.accounts.admin.key(),
+            &game.key(), // send fee to game PDA
             game.base_fee_lamports,
         );
         anchor_lang::solana_program::program::invoke(
             &ix,
-            &[
-                user.to_account_info(),
-                ctx.accounts.admin.to_account_info(),
-            ],
-        )?;
+            &[user.to_account_info(), game.to_account_info()],
+        )?;    
     
         // Update game state
         game.current_flag_holder = user.key();
         game.global_captures += 1;
+        game.prize_pool += game.base_fee_lamports;
     
         Ok(())
     }
@@ -170,6 +227,22 @@ pub struct InitializePlayer<'info> {
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct EndGame<'info> {
+    #[account(mut, seeds = [b"game"], bump = game.bump)]
+    pub game: Account<'info, Game>,
+
+    /// CHECK: This is safe because we're transferring to this pubkey from game.current_flag_holder
+    #[account(mut, address = game.current_flag_holder)]
+    pub winner: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    pub admin: SystemAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+
 #[account]
 #[derive(InitSpace)]
 pub struct Game {
@@ -180,12 +253,17 @@ pub struct Game {
     pub base_fee_lamports: u64,
     pub global_captures: u64,
     pub current_flag_holder: Pubkey,
+    pub winner: Option<Pubkey>,
+    pub last_capture_time: i64,
+    pub prize_pool: u64,
+    pub bump: u8,
 }
 
 #[account]
 #[derive(InitSpace)]
 pub struct Player {
     pub health: u64,
+    pub state: PlayerState,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
@@ -196,6 +274,15 @@ pub enum GameState {
     FinalPhase,
     Completed,
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
+#[repr(u8)]
+pub enum PlayerState {
+    Active,
+    Critical,
+    Eliminated,
+}
+
 
 #[error_code]
 pub enum CustomError {
