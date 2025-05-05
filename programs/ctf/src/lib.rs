@@ -14,6 +14,31 @@ pub mod ctf {
         let game = &mut ctx.accounts.game;
         let clock = Clock::get()?;
 
+        // Calculate the rent-exempt minimum for the vault
+    let rent_exemption = Rent::get()?.minimum_balance(0); // 0 bytes of data
+
+    // Create the vault account
+    let create_vault_ix = anchor_lang::solana_program::system_instruction::create_account(
+        &ctx.accounts.admin.key(),
+        &ctx.accounts.vault.key(),
+        rent_exemption,
+        0, // No data space required
+        &anchor_lang::solana_program::system_program::ID,
+    );
+    anchor_lang::solana_program::program::invoke_signed(
+        &create_vault_ix,
+        &[
+            ctx.accounts.admin.to_account_info(),
+            ctx.accounts.vault.to_account_info(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+        &[&[
+            b"vault",
+            game.key().as_ref(),
+            &[ctx.bumps.vault],
+        ]],
+    )?;
+
         game.state = GameState::Pending;
         game.start_time = clock.unix_timestamp;
         game.duration = game_duration;
@@ -162,12 +187,12 @@ pub mod ctf {
         // Charge lamports from player
         let ix = anchor_lang::solana_program::system_instruction::transfer(
             &user.key(),
-            &game.key(), // send fee to game PDA
+            &ctx.accounts.vault.key(), // send fee to vault
             game.base_fee_lamports,
         );
         anchor_lang::solana_program::program::invoke(
             &ix,
-            &[user.to_account_info(), game.to_account_info()],
+            &[user.to_account_info(), ctx.accounts.vault.to_account_info()],
         )?;    
     
         // Update game state
@@ -193,11 +218,9 @@ pub struct InitializeGame<'info> {
     )]
     pub game: Account<'info, Game>,
     #[account(
-        init,
-        payer = admin,
-        space = 8,
+        mut,
         seeds = [b"vault", game.key().as_ref()],
-        bump
+        bump,
     )]
     pub vault: SystemAccount<'info>,
     #[account(mut)]
@@ -216,6 +239,8 @@ pub struct UpdateGameState<'info> {
 pub struct CaptureFlag<'info> {
     #[account(mut, seeds = [b"game"], bump)]
     pub game: Account<'info, Game>,
+    #[account(mut, seeds = [b"vault", game.key().as_ref()], bump = game.vault_bump)]
+    pub vault: SystemAccount<'info>,
     #[account(mut)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [b"player", user.key().as_ref()], bump)]
@@ -246,9 +271,10 @@ pub struct EndGame<'info> {
     pub game: Account<'info, Game>,
 
     #[account(mut, seeds = [b"vault", game.key().as_ref()], bump = game.vault_bump)]
-    pub vault: AccountInfo<'info>,
+    pub vault: SystemAccount<'info>,
 
     #[account(mut, address = game.current_flag_holder)]
+    /// CHECK: This account is safe to use as it is the current flag holder.
     pub winner: UncheckedAccount<'info>,
 
     #[account(mut)]
