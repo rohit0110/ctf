@@ -1,0 +1,125 @@
+Capture the flag
+Core Game Mechanics
+Game Objective
+Last person holding the flag when the round ends wins
+Players compete to capture flag within 2-hour rounds
+Victory awards 80% of prize pool
+Player Resources
+Initial Health: 100 points per player
+Health is consumed on each capture attempt
+No health regeneration during game
+Cannot capture flag when health depletes
+Capture Mechanics
+Base Capture Cost: 15 health points
+Global Modifier: +5 health per 10 global captures
+Maximum Health Cost Cap: 30 health points
+Players cannot capture if remaining health < required cost
+Time Mechanics
+Round Duration: 2 hours (7200 seconds)
+Time Extension: +5 minutes if flag captured in last 5 minutes
+Game ends when time expires with no captures in final 5 minutes
+Economic Model
+Monetary Costs
+Base capture fee: 1-2 tokens (configurable per game instance)
+Fee goes to prize pool
+Support for native token and custom tokens across different game instances
+Prize Distribution
+Winner Share: 80% of prize pool
+Protocol Revenue: 20% of prize pool
+Portion for participation rewards
+Portion for protocol treasury
+Game States
+Round States
+Pending: Game created, awaiting start
+Active: Players can capture flag
+Final Phase: Last 5 minutes with possible extensions
+Completed: Winner determined, prizes distributed
+Player States
+Active: Has sufficient health to capture
+Critical: Low health (below 25 points)
+Eliminated: Insufficient health for minimum capture
+Technical Implementation
+Health Calculation Formula
+captureHealthCost = min(
+    baseCost + (floor(globalCaptures/10) * globalModifier),
+    maxHealthCost
+)
+
+Where:
+- baseCost = 15
+- globalModifier = 5
+- maxHealthCost = 30
+Health Cost Scaling Breakdown
+The health cost for capturing the flag increases as more global captures occur:
+
+Early Game (Captures 0-9):
+
+Floor(0-9/10) = 0
+Cost = 15 + (0 * 5) = 15 health
+Players pay minimum health cost
+Mid Game Phase 1 (Captures 10-19):
+
+Floor(10-19/10) = 1
+Cost = 15 + (1 * 5) = 20 health
+First difficulty increase
+Mid Game Phase 2 (Captures 20-29):
+
+Floor(20-29/10) = 2
+Cost = 15 + (2 * 5) = 25 health
+Second difficulty increase
+Late Game (Captures 30+):
+
+Floor(30+/10) = 3+
+Raw cost would exceed 30
+Capped at maxHealthCost = 30
+Strategic Implications
+Early game encourages participation with lower health costs
+Progressive scaling creates urgency to capture early
+Cost stabilization at 30 prevents game stagnation
+Players must balance early cheap captures vs saving health for late game
+With 100 initial health, players can make:
+6-7 captures in early game
+5 captures in mid game phase 1
+4 captures in mid game phase 2
+3 captures in late game
+Game Instance Configuration
+Token configuration (native ETH or custom)
+Base capture cost in specified token
+Game duration parameters
+Prize split ratios
+Minimum player requirements
+Administrative Features
+Game Creation
+Admins can create parallel game instances
+Each instance can specify token type
+Custom parameters per instance
+Game Management
+Pause/resume capabilities
+Emergency shutdown
+Prize distribution control
+Parameter adjustment capabilities
+Security Considerations
+Player Protection
+Atomic capture transactions
+Clear health cost display
+Transaction failure on insufficient health/funds
+Game Integrity
+Timestamp manipulation prevention
+Prize pool fund security
+Fair winner determination
+System Security
+Admin multi-sig requirements / Revenue collection account
+Program upgrade authority
+Treasury management controls
+Frontend Integration Points
+Key Player Information
+Current health status
+Global capture count
+Current flag holder
+Time remaining
+Prize pool amount
+Transaction Requirements
+Capture attempt authorization
+Token approval
+Health verification
+Game state validation

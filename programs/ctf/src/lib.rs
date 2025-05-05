@@ -22,6 +22,8 @@ pub mod ctf {
         game.global_captures = 0;
         game.current_flag_holder = Pubkey::default();
         game.bump = ctx.bumps.game;
+        game.vault = ctx.accounts.vault.key();
+        game.vault_bump = ctx.bumps.vault;
 
         Ok(())
     }
@@ -63,39 +65,42 @@ pub mod ctf {
 
     pub fn end_game(ctx: Context<EndGame>) -> Result<()> {
         let game = &mut ctx.accounts.game;
+        let game_key = game.key();
     
         require!(
             game.state != GameState::Completed,
             CustomError::AlreadyCompleted
         );
     
-        game.state = GameState::Completed;
+        game.state = GameState::Completed; 
     
         let winner = game.current_flag_holder;
         let winner_share = game.prize_pool * 80 / 100;
         let protocol_share = game.prize_pool - winner_share;
     
-        let seeds = &[b"game".as_ref(), &[game.bump]];
-        let signer_seeds = &[&seeds[..]];
+        let vault_seeds = &[
+            b"vault".as_ref(),
+            game_key.as_ref(),
+            &[game.vault_bump],
+        ];
     
         // Transfer 80% to winner
-        let game_key = game.key(); // Clone the game key to avoid borrowing issues
         let winner_transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
-            &game_key,
+            &ctx.accounts.vault.key(), // Use the vault key
             &winner,
             winner_share,
         );
         anchor_lang::solana_program::program::invoke_signed(
             &winner_transfer_ix,
             &[
-                game.to_account_info(),
+                ctx.accounts.vault.to_account_info(),
                 ctx.accounts.winner.to_account_info(),
             ],
-            signer_seeds,
+            &[vault_seeds],
         )?;
     
         let protocol_transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
-            &game_key, // Use the cloned game key
+            &ctx.accounts.vault.key(), // Use the vault key
             &ctx.accounts.admin.key(),
             protocol_share,
         );
@@ -105,7 +110,7 @@ pub mod ctf {
                 game.to_account_info(),
                 ctx.accounts.admin.to_account_info(),
             ],
-            signer_seeds,
+            &[vault_seeds]
         )?;
     
         game.prize_pool = 0;
@@ -187,6 +192,14 @@ pub struct InitializeGame<'info> {
         bump
     )]
     pub game: Account<'info, Game>,
+    #[account(
+        init,
+        payer = admin,
+        space = 8,
+        seeds = [b"vault", game.key().as_ref()],
+        bump
+    )]
+    pub vault: SystemAccount<'info>,
     #[account(mut)]
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -232,7 +245,9 @@ pub struct EndGame<'info> {
     #[account(mut, seeds = [b"game"], bump = game.bump)]
     pub game: Account<'info, Game>,
 
-    /// CHECK: This is safe because we're transferring to this pubkey from game.current_flag_holder
+    #[account(mut, seeds = [b"vault", game.key().as_ref()], bump = game.vault_bump)]
+    pub vault: AccountInfo<'info>,
+
     #[account(mut, address = game.current_flag_holder)]
     pub winner: UncheckedAccount<'info>,
 
@@ -257,6 +272,8 @@ pub struct Game {
     pub last_capture_time: i64,
     pub prize_pool: u64,
     pub bump: u8,
+    pub vault: Pubkey,
+    pub vault_bump: u8,
 }
 
 #[account]

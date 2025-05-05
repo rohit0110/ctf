@@ -87,4 +87,32 @@ describe("ctf", () => {
     console.log("Current flag holder:", game.currentFlagHolder.toBase58());
     console.log("Remaining health:", player.health.toString());
   });
+
+  it("Ends the game and distributes prize", async () => {
+    const userBalanceBefore = await provider.connection.getBalance(user.publicKey);
+    const adminBalanceBefore = await provider.connection.getBalance(provider.wallet.publicKey);
+
+    const tx = await program.methods
+      .endGame()
+      .accounts({
+        game: gamePda,
+        admin: provider.wallet.publicKey,
+        winner: user.publicKey,
+      })
+      .rpc();
+
+    console.log("Game ended with tx:", tx);
+
+    const userBalanceAfter = await provider.connection.getBalance(user.publicKey);
+    const adminBalanceAfter = await provider.connection.getBalance(provider.wallet.publicKey);
+
+    console.log("User balance before:", userBalanceBefore);
+    console.log("User balance after :", userBalanceAfter);
+    console.log("Admin balance before:", adminBalanceBefore);
+    console.log("Admin balance after :", adminBalanceAfter);
+
+    const game = await program.account.game.fetch(gamePda);
+    console.log("Game state:", game.state);
+    console.log("Prize pool after end:", game.prizePool.toNumber());
+  });
 });
