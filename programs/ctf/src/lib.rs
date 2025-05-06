@@ -89,10 +89,6 @@ pub mod ctf {
     
 
     pub fn end_game(ctx: Context<EndGame>) -> Result<()> {
-        // Check the vault ownership
-        msg!("Vault OOOOOOOOOOOOOO: {:?}", *ctx.accounts.vault.owner);
-        msg!("Vault PPPPDADAAA: {:?}", *ctx.accounts.vault.key);
-
         let game = &mut ctx.accounts.game;
         let game_key = game.key();
     
@@ -106,7 +102,8 @@ pub mod ctf {
     
         let winner = game.current_flag_holder;
         let winner_share = game.prize_pool * 80 / 100;
-        let protocol_share = game.prize_pool - winner_share;
+        let protocol_share = game.prize_pool * 20 / 100;
+        msg!("Winner share: {}", winner_share);
     
         let vault_seeds = &[
             b"vault".as_ref(),

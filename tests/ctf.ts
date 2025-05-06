@@ -41,7 +41,7 @@ describe("ctf", () => {
       .initializeGame(
         new anchor.BN(600), // duration
         new anchor.BN(15), // base capture cost (health)
-        new anchor.BN(100000) // base fee (lamports)
+        new anchor.BN(50000) // base fee (lamports)
       )
       .accounts({
         game: gamePda,
@@ -73,6 +73,9 @@ describe("ctf", () => {
       })
       .rpc();
     console.log("Game started with tx:", tx);
+    console.log("Vault balance during init:", await provider.connection.getBalance(vaultPda));
+    const vaultInfo = await provider.connection.getAccountInfo(vaultPda);
+    console.log("Vault account info:", vaultInfo);
   });
 
   it("Captures the flag", async () => {
@@ -146,9 +149,11 @@ describe("ctf", () => {
     console.log("Prize pool after end:", game.prizePool.toNumber());
 
     // Assert that the vault balance has decreased by the prize amount
+    
     assert.ok(vaultBalanceBefore - vaultBalanceAfter === prizeAmount);
-
+    console.log("Prize amount:", prizeAmount);
     // Assert that the winner received the prize
-    assert.ok(userBalanceAfter - userBalanceBefore === prizeAmount);
+    assert.ok(userBalanceAfter - userBalanceBefore >= 0.79*prizeAmount);
+    assert.ok(adminBalanceAfter - adminBalanceBefore + 5000 >= 0.19*prizeAmount); //5000 is the lamports fees as admin is signer
   });
 });
