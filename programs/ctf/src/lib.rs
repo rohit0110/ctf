@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-declare_id!("vHD8wKXwHGZsryn5VSbRCWTSHzP2vqCD8dh6VRUXq6W");
+declare_id!("GydEo8wHQtc7xVoRnwG7Z1opUK2N4if1sud3BSJxKnG2");
 
 #[program]
 pub mod ctf {
@@ -14,7 +14,7 @@ pub mod ctf {
         let game = &mut ctx.accounts.game;
         let clock = Clock::get()?;
 
-        // Calculate the rent-exempt minimum for the vault
+    // Calculate the rent-exempt minimum for the vault
     let rent_exemption = Rent::get()?.minimum_balance(0); // 0 bytes of data
 
     // Create the vault account
@@ -89,9 +89,14 @@ pub mod ctf {
     
 
     pub fn end_game(ctx: Context<EndGame>) -> Result<()> {
+        // Check the vault ownership
+        msg!("Vault OOOOOOOOOOOOOO: {:?}", *ctx.accounts.vault.owner);
+        msg!("Vault PPPPDADAAA: {:?}", *ctx.accounts.vault.key);
+
         let game = &mut ctx.accounts.game;
         let game_key = game.key();
     
+        // Ensure the game is not already completed
         require!(
             game.state != GameState::Completed,
             CustomError::AlreadyCompleted
@@ -124,6 +129,7 @@ pub mod ctf {
             &[vault_seeds],
         )?;
     
+        // Transfer protocol share to admin
         let protocol_transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
             &ctx.accounts.vault.key(), // Use the vault key
             &ctx.accounts.admin.key(),
@@ -132,7 +138,7 @@ pub mod ctf {
         anchor_lang::solana_program::program::invoke_signed(
             &protocol_transfer_ix,
             &[
-                game.to_account_info(),
+                ctx.accounts.vault.to_account_info(),
                 ctx.accounts.admin.to_account_info(),
             ],
             &[vault_seeds]
@@ -142,6 +148,7 @@ pub mod ctf {
     
         Ok(())
     }
+    
     
     
     // player var is used for player account in game, user var is used for user signing the transaction
@@ -222,6 +229,7 @@ pub struct InitializeGame<'info> {
         seeds = [b"vault", game.key().as_ref()],
         bump,
     )]
+    /// CHECK: This is a PDA owned by the program that holds the funds
     pub vault: SystemAccount<'info>,
     #[account(mut)]
     pub admin: Signer<'info>,
@@ -239,7 +247,12 @@ pub struct UpdateGameState<'info> {
 pub struct CaptureFlag<'info> {
     #[account(mut, seeds = [b"game"], bump)]
     pub game: Account<'info, Game>,
-    #[account(mut, seeds = [b"vault", game.key().as_ref()], bump = game.vault_bump)]
+    #[account(
+        mut,
+        seeds = [b"vault", game.key().as_ref()],
+        bump = game.vault_bump,
+    )]
+    /// CHECK: This is a PDA owned by the program that holds the funds
     pub vault: SystemAccount<'info>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -270,12 +283,16 @@ pub struct EndGame<'info> {
     #[account(mut, seeds = [b"game"], bump = game.bump)]
     pub game: Account<'info, Game>,
 
-    #[account(mut, seeds = [b"vault", game.key().as_ref()], bump = game.vault_bump)]
+    #[account(
+        mut,
+        seeds = [b"vault", game.key().as_ref()],
+        bump = game.vault_bump,
+    )]
+    /// CHECK: This is a PDA owned by the program that holds the funds
     pub vault: SystemAccount<'info>,
 
     #[account(mut, address = game.current_flag_holder)]
-    /// CHECK: This account is safe to use as it is the current flag holder.
-    pub winner: UncheckedAccount<'info>,
+    pub winner: SystemAccount<'info>,
 
     #[account(mut)]
     pub admin: SystemAccount<'info>,
@@ -339,5 +356,7 @@ pub enum CustomError {
     AlreadyCompleted,
     #[msg("Not enough health to capture the flag.")]
     NotEnoughHealth,
+    #[msg("Invalid vault owner.")]
+    InvalidVaultOwner,
 }
 

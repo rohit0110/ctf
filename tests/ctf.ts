@@ -96,11 +96,15 @@ describe("ctf", () => {
   });
 
   it("Ends the game and distributes prize", async () => {
-    vaultPda = new anchor.web3.PublicKey("GX8QWQQPXU5qZAvBGL8fYTLv1698bB6z4SZCZ4r3tpuR");
-
+    vaultPda = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from("vault"), gamePda.toBuffer()],
+      program.programId
+    )[0];
     // Fetch vault balance before game ends
     const vaultBalanceBefore = await provider.connection.getBalance(vaultPda);
     console.log("Vault balance before:", vaultBalanceBefore);
+    const vaultAccountInfo = await provider.connection.getAccountInfo(vaultPda);
+    console.log("Vault owner:", vaultAccountInfo.owner.toBase58());
 
     // Fetch the current prize pool in the game state
     const gameBefore = await program.account.game.fetch(gamePda);
