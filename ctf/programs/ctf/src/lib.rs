@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-declare_id!("GydEo8wHQtc7xVoRnwG7Z1opUK2N4if1sud3BSJxKnG2");
+
+declare_id!("4TaboyQDfz6ds2qZpCttzZAHzF7i8qNsFYeoBHTUPvzX");
 
 #[program]
 pub mod ctf {
@@ -356,4 +357,5 @@ pub enum CustomError {
     #[msg("Invalid vault owner.")]
     InvalidVaultOwner,
 }
+
 

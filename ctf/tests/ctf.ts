@@ -9,7 +9,6 @@ describe("ctf", () => {
 
   const program = anchor.workspace.Ctf as Program<Ctf>;
 
-  // Keypairs
   const user = anchor.web3.Keypair.generate();
 
   let gamePda: anchor.web3.PublicKey;
@@ -33,27 +32,27 @@ describe("ctf", () => {
     )[0];
 
     // Airdrop some SOL to user
-    const sig = await provider.connection.requestAirdrop(user.publicKey, 2e9); // 2 SOL
+    const sig = await provider.connection.requestAirdrop(user.publicKey, 2e9);
     await provider.connection.confirmTransaction(sig);
 
-    // Initialize game
-    const tx = await program.methods
+    // Initialize game (no vault required here)
+    await program.methods
       .initializeGame(
-        new anchor.BN(600), // duration
-        new anchor.BN(15), // base capture cost (health)
-        new anchor.BN(50000) // base fee (lamports)
+        new anchor.BN(600),
+        new anchor.BN(15),
+        new anchor.BN(50000)
       )
       .accounts({
         game: gamePda,
         admin: provider.wallet.publicKey,
+        vault: vaultPda,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();
 
-    console.log("Game initialized with tx:", tx);
-    // Initialize player
+    // Initialize player (no vault required here)
     await program.methods
-      .initializePlayer() // starting health
+      .initializePlayer()
       .accounts({
         user: user.publicKey,
         player: playerPda,
@@ -65,27 +64,30 @@ describe("ctf", () => {
   });
 
   it("Starts the game", async () => {
-    const tx = await program.methods
+    // Pass vault PDA explicitly here
+    await program.methods
       .startGame()
       .accounts({
         game: gamePda,
         admin: provider.wallet.publicKey,
+        vault: vaultPda,
       })
       .rpc();
-    console.log("Game started with tx:", tx);
+
     console.log("Vault balance during init:", await provider.connection.getBalance(vaultPda));
     const vaultInfo = await provider.connection.getAccountInfo(vaultPda);
     console.log("Vault account info:", vaultInfo);
   });
 
   it("Captures the flag", async () => {
-    const tx = await program.methods
+    await program.methods
       .captureFlag()
       .accounts({
         game: gamePda,
         user: user.publicKey,
         player: playerPda,
         admin: provider.wallet.publicKey,
+        vault: vaultPda, // Pass vault PDA here too
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .signers([user])
@@ -93,67 +95,48 @@ describe("ctf", () => {
 
     const game = await program.account.game.fetch(gamePda);
     const player = await program.account.player.fetch(playerPda);
-    console.log("Flag captured with tx:", tx);
+
     console.log("Current flag holder:", game.currentFlagHolder.toBase58());
     console.log("Remaining health:", player.health.toString());
   });
 
   it("Ends the game and distributes prize", async () => {
+    // Vault PDA re-derived to be sure
     vaultPda = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from("vault"), gamePda.toBuffer()],
       program.programId
     )[0];
-    // Fetch vault balance before game ends
+
     const vaultBalanceBefore = await provider.connection.getBalance(vaultPda);
-    console.log("Vault balance before:", vaultBalanceBefore);
     const vaultAccountInfo = await provider.connection.getAccountInfo(vaultPda);
     console.log("Vault owner:", vaultAccountInfo.owner.toBase58());
 
-    // Fetch the current prize pool in the game state
     const gameBefore = await program.account.game.fetch(gamePda);
-    const prizeAmount = gameBefore.prizePool.toNumber(); // Assuming `prizePool` holds the total prize pool amount
+    const prizeAmount = gameBefore.prizePool.toNumber();
 
     const userBalanceBefore = await provider.connection.getBalance(user.publicKey);
     const adminBalanceBefore = await provider.connection.getBalance(provider.wallet.publicKey);
-    console.log("Vault PDA:", vaultPda.toBase58());
-    console.log("Winner pubkey:", user.publicKey.toBase58());
-    console.log("Admin pubkey:", provider.wallet.publicKey.toBase58());
 
-    const tx = await program.methods
+    await program.methods
       .endGame()
       .accounts({
         game: gamePda,
         admin: provider.wallet.publicKey,
         winner: user.publicKey,
-        vault: vaultPda,
+        vault: vaultPda, // Pass vault PDA here as well
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();
 
-    console.log("Game ended with tx:", tx);
-
-    // Fetch balances after game ends
     const vaultBalanceAfter = await provider.connection.getBalance(vaultPda);
     const userBalanceAfter = await provider.connection.getBalance(user.publicKey);
     const adminBalanceAfter = await provider.connection.getBalance(provider.wallet.publicKey);
 
-    console.log("User balance before:", userBalanceBefore);
-    console.log("User balance after :", userBalanceAfter);
-    console.log("Admin balance before:", adminBalanceBefore);
-    console.log("Admin balance after :", adminBalanceAfter);
-    console.log("Vault balance before:", vaultBalanceBefore);
-    console.log("Vault balance after :", vaultBalanceAfter);
-
     const game = await program.account.game.fetch(gamePda);
-    console.log("Game state:", game.state);
-    console.log("Prize pool after end:", game.prizePool.toNumber());
 
-    // Assert that the vault balance has decreased by the prize amount
-    
+    // Assertions
     assert.ok(vaultBalanceBefore - vaultBalanceAfter === prizeAmount);
-    console.log("Prize amount:", prizeAmount);
-    // Assert that the winner received the prize
-    assert.ok(userBalanceAfter - userBalanceBefore >= 0.79*prizeAmount);
-    assert.ok(adminBalanceAfter - adminBalanceBefore + 5000 >= 0.19*prizeAmount); //5000 is the lamports fees as admin is signer
+    assert.ok(userBalanceAfter - userBalanceBefore >= 0.79 * prizeAmount);
+    assert.ok(adminBalanceAfter - adminBalanceBefore + 5000 >= 0.19 * prizeAmount);
   });
 });
