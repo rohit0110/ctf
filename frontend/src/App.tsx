@@ -14,19 +14,15 @@ import "./App.css";
 // Default styles that can be overridden by your app
 import "@solana/wallet-adapter-react-ui/styles.css";
 
+// Import your Counter/CTF state display component
+import GameStateViewer from "./components/ctf-state";
+import InitializeGameButton from "./components/InitializeGameButton";
+
 function App() {
-  // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
   const network = WalletAdapterNetwork.Devnet;
-  // You can also provide a custom RPC endpoint.
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
-  const wallets = useMemo(
-    () => [
-      // if desired, manually define specific/custom wallets here (normally not required)
-      // otherwise, the wallet-adapter will auto detect the wallets a user's browser has available
-    ],
-    [network],
-  );
+  const wallets = useMemo(() => [], [network]);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
@@ -34,10 +30,13 @@ function App() {
         <WalletModalProvider>
           <WalletMultiButton />
           <h1>Hello Solana</h1>
+          <InitializeGameButton />
+          <GameStateViewer />
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
 }
+
 
 export default App;
