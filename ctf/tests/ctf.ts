@@ -8,16 +8,17 @@ describe("ctf", () => {
   anchor.setProvider(provider);
 
   const program = anchor.workspace.Ctf as Program<Ctf>;
-
   const user = anchor.web3.Keypair.generate();
+  const gameId = new anchor.BN(41); // Example game ID, use any unique number
 
   let gamePda: anchor.web3.PublicKey;
   let playerPda: anchor.web3.PublicKey;
   let vaultPda: anchor.web3.PublicKey;
 
   it("Initializes game and player", async () => {
+    const gameIdBytes = gameId.toArrayLike(Buffer, "le", 8);
     gamePda = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("game")],
+      [Buffer.from("game"), provider.wallet.publicKey.toBuffer(), gameIdBytes],
       program.programId
     )[0];
 
@@ -31,13 +32,14 @@ describe("ctf", () => {
       program.programId
     )[0];
 
-    // Airdrop some SOL to user
+    // Airdrop SOL to the user
     const sig = await provider.connection.requestAirdrop(user.publicKey, 2e9);
     await provider.connection.confirmTransaction(sig);
 
-    // Initialize game (no vault required here)
+    // Initialize Game
     await program.methods
       .initializeGame(
+        gameId,
         new anchor.BN(600),
         new anchor.BN(15),
         new anchor.BN(50000)
@@ -50,13 +52,12 @@ describe("ctf", () => {
       })
       .rpc();
 
-    // Initialize player (no vault required here)
+    // Initialize Player
     await program.methods
       .initializePlayer()
       .accounts({
         user: user.publicKey,
         player: playerPda,
-        game: gamePda,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .signers([user])
@@ -64,9 +65,8 @@ describe("ctf", () => {
   });
 
   it("Starts the game", async () => {
-    // Pass vault PDA explicitly here
     await program.methods
-      .startGame()
+      .startGame(gameId)
       .accounts({
         game: gamePda,
         admin: provider.wallet.publicKey,
@@ -81,13 +81,13 @@ describe("ctf", () => {
 
   it("Captures the flag", async () => {
     await program.methods
-      .captureFlag()
+      .captureFlag(gameId)
       .accounts({
         game: gamePda,
         user: user.publicKey,
         player: playerPda,
         admin: provider.wallet.publicKey,
-        vault: vaultPda, // Pass vault PDA here too
+        vault: vaultPda,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .signers([user])
@@ -101,12 +101,6 @@ describe("ctf", () => {
   });
 
   it("Ends the game and distributes prize", async () => {
-    // Vault PDA re-derived to be sure
-    vaultPda = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("vault"), gamePda.toBuffer()],
-      program.programId
-    )[0];
-
     const vaultBalanceBefore = await provider.connection.getBalance(vaultPda);
     const vaultAccountInfo = await provider.connection.getAccountInfo(vaultPda);
     console.log("Vault owner:", vaultAccountInfo.owner.toBase58());
@@ -118,12 +112,12 @@ describe("ctf", () => {
     const adminBalanceBefore = await provider.connection.getBalance(provider.wallet.publicKey);
 
     await program.methods
-      .endGame()
+      .endGame(gameId)
       .accounts({
         game: gamePda,
         admin: provider.wallet.publicKey,
         winner: user.publicKey,
-        vault: vaultPda, // Pass vault PDA here as well
+        vault: vaultPda,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();

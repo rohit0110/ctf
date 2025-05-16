@@ -8,6 +8,7 @@ pub mod ctf {
 
     pub fn initialize_game(
         ctx: Context<InitializeGame>,
+        _game_id: u64,
         game_duration: i64,       // in seconds
         base_capture_cost: u64,   // cost in health points
         base_fee_lamports: u64,   // fee in lamports
@@ -62,7 +63,7 @@ pub mod ctf {
         Ok(())
     }
 
-    pub fn start_game(ctx: Context<UpdateGameState>) -> Result<()> {
+    pub fn start_game(ctx: Context<UpdateGameState>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
     
         require!(
@@ -75,7 +76,7 @@ pub mod ctf {
         Ok(())
     }
 
-    pub fn start_final_phase(ctx: Context<UpdateGameState>) -> Result<()> {
+    pub fn start_final_phase(ctx: Context<UpdateGameState>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
     
         require!(
@@ -89,7 +90,7 @@ pub mod ctf {
     }
     
 
-    pub fn end_game(ctx: Context<EndGame>) -> Result<()> {
+    pub fn end_game(ctx: Context<EndGame>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
         let game_key = game.key();
     
@@ -150,7 +151,7 @@ pub mod ctf {
     
     
     // player var is used for player account in game, user var is used for user signing the transaction
-    pub fn capture_flag(ctx: Context<CaptureFlag>) -> Result<()> {
+    pub fn capture_flag(ctx: Context<CaptureFlag>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
         let user = &mut ctx.accounts.user;
         let player = &mut ctx.accounts.player;
@@ -213,12 +214,13 @@ pub mod ctf {
 }
 
 #[derive(Accounts)]
+#[instruction(game_id: u64)]
 pub struct InitializeGame<'info> {
     #[account(
         init,
         payer = admin,
         space = 8 + Game::INIT_SPACE,
-        seeds = [b"game"],
+        seeds = [b"game", admin.key().as_ref(), game_id.to_le_bytes().as_ref()],
         bump
     )]
     pub game: Account<'info, Game>,
@@ -235,15 +237,17 @@ pub struct InitializeGame<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(game_id: u64)]
 pub struct UpdateGameState<'info> {
-    #[account(mut, seeds = [b"game"], bump)]
+    #[account(mut, seeds = [b"game", admin.key().as_ref(), game_id.to_le_bytes().as_ref()], bump)]
     pub game: Account<'info, Game>,
     pub admin: Signer<'info>,
 }
 
 #[derive(Accounts)]
+#[instruction(game_id: u64)]
 pub struct CaptureFlag<'info> {
-    #[account(mut, seeds = [b"game"], bump)]
+    #[account(mut, seeds = [b"game", admin.key().as_ref(), game_id.to_le_bytes().as_ref()], bump)]
     pub game: Account<'info, Game>,
     #[account(
         mut,
@@ -277,8 +281,9 @@ pub struct InitializePlayer<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(game_id: u64)]
 pub struct EndGame<'info> {
-    #[account(mut, seeds = [b"game"], bump = game.bump)]
+    #[account(mut, seeds = [b"game", admin.key().as_ref(), game_id.to_le_bytes().as_ref()], bump = game.bump)]
     pub game: Account<'info, Game>,
 
     #[account(

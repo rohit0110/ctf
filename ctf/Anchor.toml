@@ -14,7 +14,7 @@ ctf = "4TaboyQDfz6ds2qZpCttzZAHzF7i8qNsFYeoBHTUPvzX"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "/Users/icarus/.config/solana/id.json"
 
 [scripts]
