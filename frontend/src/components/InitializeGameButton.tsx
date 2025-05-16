@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { program, getGamePDA } from "../anchor/setup";
-import { PublicKey, SystemProgram } from "@solana/web3.js";
-import { Buffer } from "buffer";
+import { program, getGamePDA, getVaultPDA } from "../anchor/setup";
+import { SystemProgram } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import { ADMIN_PUBLIC_KEY } from "../constant/constant";
 
 export default function InitializeGameButton() {
   const { publicKey, sendTransaction } = useWallet();
@@ -10,18 +11,13 @@ export default function InitializeGameButton() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Example fixed args, change as needed
-  const gameDuration = BigInt(2 * 60 * 60); // 2 hours in seconds (or whatever unit your program expects)
-  const baseCaptureCost = BigInt(1_000_000); // e.g. 0.001 SOL
-  const baseFeeLamports = BigInt(10_000); // fee in lamports
+  const gameDuration = new BN(2 * 60 * 60); // 2 hours in seconds (or whatever unit your program expects)
+  const baseCaptureCost = new BN(1_000_000); // e.g. 0.001 SOL
+  const baseFeeLamports = new BN(10_000); // fee in lamports
+  const gameId = new BN(1);
 
-  const gamePDA = getGamePDA();
-
-  // You also need to derive the vault PDA similarly or get it from your program
-  // For this example, I’m showing a dummy vault PDA derivation; adjust as per your program
-  const [vaultPDA] = PublicKey.findProgramAddressSync(
-    [Buffer.from("vault")],
-    program.programId,
-  );
+  const gamePDA = getGamePDA(ADMIN_PUBLIC_KEY, gameId);  
+  const vaultPDA = getVaultPDA(gamePDA);
 
   const onClick = async () => {
     if (!publicKey) return;
@@ -29,7 +25,7 @@ export default function InitializeGameButton() {
 
     try {
       const tx = await program.methods
-        .initializeGame(gameDuration, baseCaptureCost, baseFeeLamports)
+        .initializeGame(gameId, gameDuration, baseCaptureCost, baseFeeLamports)
         .accounts({
           game: gamePDA,
           vault: vaultPDA,

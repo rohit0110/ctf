@@ -1,18 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { program, getGamePDA, type GameAccount } from "../anchor/setup";
-import { Buffer } from "buffer";
+import { ADMIN_PUBLIC_KEY } from "../constant/constant";
+import { BN } from "@coral-xyz/anchor";
+
 
 export default function GameStateViewer() {
   const { connection } = useConnection();
   const [gameData, setGameData] = useState<GameAccount | null>(null);
 
-  const gamePDA = getGamePDA();
+  const gamePDA = useMemo(() => getGamePDA(ADMIN_PUBLIC_KEY, new BN(1)), []);
 
   useEffect(() => {
     const fetchGameData = async () => {
       try {
         const data = await program.account.game.fetch(gamePDA);
+        console.log("Fetched game data:", data);
         setGameData(data);
       } catch (error) {
         console.error("Error fetching game account data:", error);

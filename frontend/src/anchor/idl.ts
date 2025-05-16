@@ -28,6 +28,10 @@ export type Ctf = {
       ],
       "args": [
         {
+          "name": "gameId",
+          "type": "u64"
+        },
+        {
           "name": "gameDuration",
           "type": "i64"
         },
@@ -76,7 +80,12 @@ export type Ctf = {
           "isSigner": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "startFinalPhase",
@@ -92,7 +101,12 @@ export type Ctf = {
           "isSigner": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "endGame",
@@ -123,7 +137,12 @@ export type Ctf = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "captureFlag",
@@ -159,7 +178,12 @@ export type Ctf = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -349,6 +373,10 @@ export const IDL: Ctf = {
       ],
       "args": [
         {
+          "name": "gameId",
+          "type": "u64"
+        },
+        {
           "name": "gameDuration",
           "type": "i64"
         },
@@ -397,7 +425,12 @@ export const IDL: Ctf = {
           "isSigner": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "startFinalPhase",
@@ -413,7 +446,12 @@ export const IDL: Ctf = {
           "isSigner": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "endGame",
@@ -444,7 +482,12 @@ export const IDL: Ctf = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "captureFlag",
@@ -480,7 +523,12 @@ export const IDL: Ctf = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [

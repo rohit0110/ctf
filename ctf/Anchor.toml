@@ -5,16 +5,16 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-ctf = "4TaboyQDfz6ds2qZpCttzZAHzF7i8qNsFYeoBHTUPvzX"
+ctf = "F2qzfimMATGDD797Wf6pszDPW4J9tL4TvFixokMKkdiu"
 
 [programs.devnet]
-ctf = "4TaboyQDfz6ds2qZpCttzZAHzF7i8qNsFYeoBHTUPvzX"
+ctf = "F2qzfimMATGDD797Wf6pszDPW4J9tL4TvFixokMKkdiu"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/icarus/.config/solana/id.json"
 
 [scripts]
