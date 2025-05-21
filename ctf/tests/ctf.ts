@@ -70,7 +70,6 @@ describe("ctf", () => {
       .accounts({
         game: gamePda,
         admin: provider.wallet.publicKey,
-        vault: vaultPda,
       })
       .rpc();
 
