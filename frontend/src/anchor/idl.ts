@@ -3,6 +3,32 @@ export type Ctf = {
   "name": "ctf",
   "instructions": [
     {
+      "name": "initializeGameRegistry",
+      "accounts": [
+        {
+          "name": "gameRegistry",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initializeGame",
       "accounts": [
         {
@@ -265,6 +291,22 @@ export type Ctf = {
             "type": {
               "defined": "PlayerState"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "gameRegistry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "currentGameId",
+            "type": "u64"
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
           }
         ]
       }
@@ -348,6 +390,32 @@ export const IDL: Ctf = {
   "name": "ctf",
   "instructions": [
     {
+      "name": "initializeGameRegistry",
+      "accounts": [
+        {
+          "name": "gameRegistry",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initializeGame",
       "accounts": [
         {
@@ -610,6 +678,22 @@ export const IDL: Ctf = {
             "type": {
               "defined": "PlayerState"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "gameRegistry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "currentGameId",
+            "type": "u64"
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
           }
         ]
       }

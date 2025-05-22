@@ -6,6 +6,13 @@ declare_id!("F2qzfimMATGDD797Wf6pszDPW4J9tL4TvFixokMKkdiu");
 pub mod ctf {
     use super::*;
 
+    pub fn initialize_game_registry(ctx: Context<InitializeGameRegistry>, game_id: u64) -> Result<()> {
+        let game_registry = &mut ctx.accounts.game_registry;
+        game_registry.current_game_id = game_id;
+        game_registry.admin = ctx.accounts.admin.key();
+        Ok(())
+    }
+
     pub fn initialize_game(
         ctx: Context<InitializeGame>,
         _game_id: u64,
@@ -238,6 +245,22 @@ pub struct InitializeGame<'info> {
 
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
+pub struct InitializeGameRegistry<'info> {
+    #[account(
+        init,
+        payer = admin,
+        space = 8 + GameRegistry::INIT_SPACE,
+        seeds = [b"game_registry", admin.key().as_ref()],
+        bump
+    )]
+    pub game_registry: Account<'info, GameRegistry>,
+    #[account(mut)]
+    pub admin: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(game_id: u64)]
 pub struct UpdateGameState<'info> {
     #[account(mut, seeds = [b"game", admin.key().as_ref(), game_id.to_le_bytes().as_ref()], bump)]
     pub game: Account<'info, Game>,
@@ -303,7 +326,6 @@ pub struct EndGame<'info> {
     pub system_program: Program<'info, System>,
 }
 
-
 #[account]
 #[derive(InitSpace)]
 pub struct Game {
@@ -327,6 +349,13 @@ pub struct Game {
 pub struct Player {
     pub health: u64,
     pub state: PlayerState,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct GameRegistry {
+    pub current_game_id: u64,
+    pub admin: Pubkey,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
