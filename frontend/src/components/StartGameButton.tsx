@@ -31,7 +31,7 @@ export default function StartGameButton({ gameId }: Props) {
 
       const txSig = await sendTransaction(tx, connection);
       console.log(
-        `Game Started! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet`
+        `Game Started! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
       );
     } catch (error) {
       console.error("Error starting game:", error);

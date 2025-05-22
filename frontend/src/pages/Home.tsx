@@ -14,6 +14,7 @@ export default function Home() {
       if (publicKey.equals(ADMIN_PUBLIC_KEY)) {
         navigate("/admin");
       } else {
+        // add initializePlayer function here
         navigate("/player");
       }
     }

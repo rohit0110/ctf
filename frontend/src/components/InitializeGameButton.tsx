@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { program, getGamePDA, getVaultPDA } from "../anchor/setup";
+import { program, getGamePDA, getVaultPDA, getGameRegistryPDA } from "../anchor/setup";
 import { SystemProgram } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { ADMIN_PUBLIC_KEY } from "../constant/constant";
@@ -30,6 +30,8 @@ export default function InitializeGameButton({
   const gamePDA = getGamePDA(ADMIN_PUBLIC_KEY, parsedGameId);
   const vaultPDA = getVaultPDA(gamePDA);
 
+  const gameRegistry = getGameRegistryPDA(ADMIN_PUBLIC_KEY);
+
   const onClick = async () => {
     if (!publicKey) return;
     setIsLoading(true);
@@ -47,7 +49,21 @@ export default function InitializeGameButton({
 
       const txSig = await sendTransaction(tx, connection);
       console.log(
-        `Game initialized! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet`
+        `Game initialized! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
+      );
+
+      const reg_tx = await program.methods
+        .initializeGameRegistry(parsedGameId)
+        .accounts({
+          gameRegistry: gameRegistry,
+          admin: publicKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .transaction();
+      
+      const reg_txSig = await sendTransaction(reg_tx, connection);
+      console.log(
+        `Game registry initialized! View transaction: https://solana.fm/tx/${reg_txSig}?cluster=devnet-alpha`
       );
     } catch (error) {
       console.error("Error initializing game:", error);
