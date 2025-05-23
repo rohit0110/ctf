@@ -1,4 +1,5 @@
 // import CaptureFlagButton from "../components/CaptureFlagButton";
+import CaptureFlagButton from "../components/CaptureFlagButton";
 import GameStateViewer from "../components/ctf-state";
 import { useCurrentGameId } from "../components/GetActiveGameId";
 
@@ -23,6 +24,11 @@ export default function PlayerPage() {
           <p className="text-red-500">No active game found.</p>
         )}
       </div>
+
+        {/* Placeholder for Capture Flag button */}
+        <div className="mt-4">
+            <CaptureFlagButton />
+        </div>
 
       {/* Placeholder for more */}
       <div className="mt-6">

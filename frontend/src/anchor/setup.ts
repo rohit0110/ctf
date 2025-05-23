@@ -40,7 +40,17 @@ function getGameRegistryPDA(admin: PublicKey): PublicKey {
   )[0];
 }
 
+// Utility to get Player Profile PDA
+function getPlayerProfilePDA(user: PublicKey): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("player"),
+      user.toBuffer()
+    ],
+      PROGRAM_ID
+  )[0];
+}
 
 // Export TypeScript type for the game account
 export type GameAccount = IdlAccounts<Ctf>["game"];
-export { getGamePDA, getVaultPDA, getGameRegistryPDA };
+export { getGamePDA, getVaultPDA, getGameRegistryPDA, getPlayerProfilePDA };
