@@ -2,16 +2,21 @@ import { useEffect, useState, useMemo } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { program, getGamePDA, type GameAccount } from "../anchor/setup";
 import { ADMIN_PUBLIC_KEY } from "../constant/constant";
+import { useCurrentGameId } from "./GetActiveGameId"; // <-- adjust path as needed
 import { BN } from "@coral-xyz/anchor";
-
 
 export default function GameStateViewer() {
   const { connection } = useConnection();
+  const { gameId, loading } = useCurrentGameId();
   const [gameData, setGameData] = useState<GameAccount | null>(null);
 
-  const gamePDA = useMemo(() => getGamePDA(ADMIN_PUBLIC_KEY, new BN(1)), []);
+  const gamePDA = useMemo(() => {
+    return gameId ? getGamePDA(ADMIN_PUBLIC_KEY, new BN(gameId)) : null;
+  }, [gameId]);
 
   useEffect(() => {
+    if (!gamePDA) return;
+
     const fetchGameData = async () => {
       try {
         const data = await program.account.game.fetch(gamePDA);
@@ -30,13 +35,13 @@ export default function GameStateViewer() {
         try {
           const decoded = program.coder.accounts.decode<GameAccount>(
             "game",
-            accountInfo.data,
+            accountInfo.data
           );
           setGameData(decoded);
         } catch (error) {
           console.error("Error decoding game data:", error);
         }
-      },
+      }
     );
 
     return () => {
@@ -46,15 +51,17 @@ export default function GameStateViewer() {
 
   return (
     <div className="text-lg">
-      {gameData ? (
+      {loading ? (
+        <p>Loading game state...</p>
+      ) : gameData && gameId ? (
         <>
-          <p>State: {gameData?.state ? Object.keys(gameData.state)[0] : "Unknown"}</p>
-
+          <p>Game ID: {gameId}</p>
+          <p>State: {Object.keys(gameData.state)[0]}</p>
           <p>Prize Pool: {gameData.prizePool.toString()} lamports</p>
           <p>Current Holder: {gameData.currentFlagHolder.toBase58()}</p>
         </>
       ) : (
-        <p>Loading game state...</p>
+        <p>No game data found.</p>
       )}
     </div>
   );
