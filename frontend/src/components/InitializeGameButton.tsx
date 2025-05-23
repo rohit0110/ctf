@@ -33,43 +33,59 @@ export default function InitializeGameButton({
   const gameRegistry = getGameRegistryPDA(ADMIN_PUBLIC_KEY);
 
   const onClick = async () => {
-    if (!publicKey) return;
-    setIsLoading(true);
+  if (!publicKey) return;
+  setIsLoading(true);
 
-    try {
-      const tx = await program.methods
-        .initializeGame(parsedGameId, parsedDuration, parsedCaptureCost, parsedBaseFee)
+  try {
+    const tx = await program.methods
+      .initializeGame(parsedGameId, parsedDuration, parsedCaptureCost, parsedBaseFee)
+      .accounts({
+        game: gamePDA,
+        vault: vaultPDA,
+        admin: publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .transaction();
+
+    const txSig = await sendTransaction(tx, connection);
+    console.log(`Game initialized! View: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`);
+
+    // 👉 Check if GameRegistry exists
+    const accountInfo = await connection.getAccountInfo(gameRegistry);
+
+    let regTx;
+    if (!accountInfo) {
+      // GameRegistry doesn't exist: initialize
+      regTx = await program.methods
+        .initializeGameRegistry(parsedGameId)
         .accounts({
-          game: gamePDA,
-          vault: vaultPDA,
+          gameRegistry: gameRegistry,
           admin: publicKey,
           systemProgram: SystemProgram.programId,
         })
         .transaction();
-
-      const txSig = await sendTransaction(tx, connection);
-      console.log(
-        `Game initialized! View transaction: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`
-      );
-
-      const reg_tx = await program.methods
+      console.log("Creating new Game Registry...");
+    } else {
+      // GameRegistry exists: update
+      regTx = await program.methods
         .updateGameRegistry(parsedGameId)
         .accounts({
           gameRegistry: gameRegistry,
           admin: publicKey,
         })
         .transaction();
-      
-      const reg_txSig = await sendTransaction(reg_tx, connection);
-      console.log(
-        `Game registry updated! View transaction: https://solana.fm/tx/${reg_txSig}?cluster=devnet-alpha`
-      );
-    } catch (error) {
-      console.error("Error initializing game:", error);
-    } finally {
-      setIsLoading(false);
+      console.log("Updating existing Game Registry...");
     }
-  };
+
+    const regTxSig = await sendTransaction(regTx, connection);
+    console.log(`Registry tx: https://solana.fm/tx/${regTxSig}?cluster=devnet-alpha`);
+  } catch (error) {
+    console.error("Error initializing game or registry:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <button
