@@ -53,17 +53,16 @@ export default function InitializeGameButton({
       );
 
       const reg_tx = await program.methods
-        .initializeGameRegistry(parsedGameId)
+        .updateGameRegistry(parsedGameId)
         .accounts({
           gameRegistry: gameRegistry,
           admin: publicKey,
-          systemProgram: SystemProgram.programId,
         })
         .transaction();
       
       const reg_txSig = await sendTransaction(reg_tx, connection);
       console.log(
-        `Game registry initialized! View transaction: https://solana.fm/tx/${reg_txSig}?cluster=devnet-alpha`
+        `Game registry updated! View transaction: https://solana.fm/tx/${reg_txSig}?cluster=devnet-alpha`
       );
     } catch (error) {
       console.error("Error initializing game:", error);

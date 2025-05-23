@@ -8,8 +8,15 @@ pub mod ctf {
 
     pub fn initialize_game_registry(ctx: Context<InitializeGameRegistry>, game_id: u64) -> Result<()> {
         let game_registry = &mut ctx.accounts.game_registry;
+        // Ensure only the admin who owns the registry can update it
+        require_keys_eq!(game_registry.admin, ctx.accounts.admin.key(),CustomError::InvalidAuthToUpdateGameRegistry);
         game_registry.current_game_id = game_id;
-        game_registry.admin = ctx.accounts.admin.key();
+        Ok(())
+    }
+
+    pub fn update_game_registry(ctx: Context<UpdateGameRegistry>, game_id: u64) -> Result<()> {
+        let game_registry = &mut ctx.accounts.game_registry;
+        game_registry.current_game_id = game_id;
         Ok(())
     }
 
@@ -269,6 +276,14 @@ pub struct UpdateGameState<'info> {
 
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
+pub struct UpdateGameRegistry<'info> {
+    #[account(mut, seeds = [b"game_registry", admin.key().as_ref()], bump)]
+    pub game_registry: Account<'info, GameRegistry>,
+    pub admin: Signer<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(game_id: u64)]
 pub struct CaptureFlag<'info> {
     #[account(mut, seeds = [b"game", admin.key().as_ref(), game_id.to_le_bytes().as_ref()], bump)]
     pub game: Account<'info, Game>,
@@ -390,6 +405,8 @@ pub enum CustomError {
     NotEnoughHealth,
     #[msg("Invalid vault owner.")]
     InvalidVaultOwner,
+    #[msg("Invalid autth to update game registry.")]
+    InvalidAuthToUpdateGameRegistry,
 }
 
 

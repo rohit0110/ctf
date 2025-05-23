@@ -29,6 +29,27 @@ export type Ctf = {
       ]
     },
     {
+      "name": "updateGameRegistry",
+      "accounts": [
+        {
+          "name": "gameRegistry",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initializeGame",
       "accounts": [
         {
@@ -381,6 +402,11 @@ export type Ctf = {
       "code": 6005,
       "name": "InvalidVaultOwner",
       "msg": "Invalid vault owner."
+    },
+    {
+      "code": 6006,
+      "name": "InvalidAuthToUpdateGameRegistry",
+      "msg": "Invalid autth to update game registry."
     }
   ]
 };
@@ -416,6 +442,27 @@ export const IDL: Ctf = {
       ]
     },
     {
+      "name": "updateGameRegistry",
+      "accounts": [
+        {
+          "name": "gameRegistry",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
+    },
+    {
       "name": "initializeGame",
       "accounts": [
         {
@@ -768,6 +815,11 @@ export const IDL: Ctf = {
       "code": 6005,
       "name": "InvalidVaultOwner",
       "msg": "Invalid vault owner."
+    },
+    {
+      "code": 6006,
+      "name": "InvalidAuthToUpdateGameRegistry",
+      "msg": "Invalid autth to update game registry."
     }
   ]
 };
