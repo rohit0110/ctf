@@ -1,7 +1,8 @@
-ctf-anchor/.anchor
-ctf-anchor/.DS_Store
-ctf-anchor/target
-ctf-anchor/**/*.rs.bk
-ctf-anchor/node_modules
-ctf-anchor/test-ledger
-ctf-anchor/.yarn
+ctf/.anchor
+ctf/.DS_Store
+ctf/target
+ctf/**/*.rs.bk
+ctf/node_modules
+ctf/test-ledger
+ctf/.yarn
+test-ledger
