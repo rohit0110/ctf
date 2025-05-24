@@ -53,4 +53,5 @@ function getPlayerProfilePDA(user: PublicKey): PublicKey {
 
 // Export TypeScript type for the game account
 export type GameAccount = IdlAccounts<Ctf>["game"];
+export type PlayerProfileAccount = IdlAccounts<Ctf>["player"];
 export { getGamePDA, getVaultPDA, getGameRegistryPDA, getPlayerProfilePDA };

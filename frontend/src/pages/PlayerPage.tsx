@@ -1,15 +1,17 @@
-// import CaptureFlagButton from "../components/CaptureFlagButton";
 import CaptureFlagButton from "../components/CaptureFlagButton";
 import GameStateViewer from "../components/ctf-state";
 import { useCurrentGameId } from "../components/GetActiveGameId";
+import { usePlayerProfile } from "../components/GetPlayerProfile";
 
 export default function PlayerPage() {
   const { gameId, loading } = useCurrentGameId();
+  const { profile, loading: profileLoading } = usePlayerProfile();
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Player Dashboard</h1>
 
+      {/* Game State */}
       <div>
         <GameStateViewer />
       </div>
@@ -19,27 +21,33 @@ export default function PlayerPage() {
         {loading ? (
           <p>Loading current game ID...</p>
         ) : gameId ? (
-          <p className="text-lg">Current Game ID: <strong>{gameId}</strong></p>
+          <p className="text-lg">
+            Current Game ID: <strong>{gameId}</strong>
+          </p>
         ) : (
           <p className="text-red-500">No active game found.</p>
         )}
       </div>
 
-        {/* Placeholder for Capture Flag button */}
-        <div className="mt-4">
-            <CaptureFlagButton />
-        </div>
+      {/* Capture Button */}
+      <div className="mt-4">
+        <CaptureFlagButton />
+      </div>
 
-      {/* Placeholder for more */}
+      {/* Player Profile */}
       <div className="mt-6">
-        <h2 className="text-lg font-semibold">Your Stats</h2>
-        <ul className="list-disc ml-6">
-          <li>Health: coming soon</li>
-          <li>Flag Status: coming soon</li>
-          <li>Capture Cost: based on game state</li>
-        </ul>
+        <h2 className="text-xl font-semibold mb-2">Player Profile</h2>
+        {profileLoading ? (
+          <p>Loading profile...</p>
+        ) : profile ? (
+          <div className="border p-4 rounded bg-gray-100">
+            <p>Health: {profile.health?.toString?.() ?? "N/A"}</p>
+            <p>State: {profile.state ? Object.keys(profile.state)[0] : "Unknown"}</p>
+          </div>
+        ) : (
+          <p className="text-red-500">No player profile found.</p>
+        )}
       </div>
     </div>
   );
 }
-

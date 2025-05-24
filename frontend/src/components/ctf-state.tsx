@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { program, getGamePDA, type GameAccount } from "../anchor/setup";
 import { ADMIN_PUBLIC_KEY } from "../constant/constant";
-import { useCurrentGameId } from "./GetActiveGameId"; // <-- adjust path as needed
+import { useCurrentGameId } from "./GetActiveGameId";
 import { BN } from "@coral-xyz/anchor";
 
 export default function GameStateViewer() {
