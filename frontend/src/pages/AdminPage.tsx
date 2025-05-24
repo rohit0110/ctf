@@ -1,6 +1,7 @@
 import { useState } from "react";
 import InitializeGameButton from "../components/InitializeGameButton";
 import StartGameButton from "../components/StartGameButton";
+import EndGameButton from "../components/EndGameButton";
 
 export default function AdminPage() {
   const [gameId, setGameId] = useState("1");
@@ -63,6 +64,8 @@ export default function AdminPage() {
       <StartGameButton
         gameId={gameId}
       />
+
+      <EndGameButton/>
     </div>
   );
 }
