@@ -1,25 +1,30 @@
 use anchor_lang::prelude::*;
 
+// Declare the program ID
 declare_id!("F2qzfimMATGDD797Wf6pszDPW4J9tL4TvFixokMKkdiu");
 
 #[program]
 pub mod ctf {
     use super::*;
 
+    /// Initializes the game registry account with the given game_id.
+    /// Only the admin who owns the registry can update it.
     pub fn initialize_game_registry(ctx: Context<InitializeGameRegistry>, game_id: u64) -> Result<()> {
         let game_registry = &mut ctx.accounts.game_registry;
-        // Ensure only the admin who owns the registry can update it
-        require_keys_eq!(game_registry.admin, ctx.accounts.admin.key(),CustomError::InvalidAuthToUpdateGameRegistry);
+        require_keys_eq!(game_registry.admin, ctx.accounts.admin.key(), CustomError::InvalidAuthToUpdateGameRegistry);
         game_registry.current_game_id = game_id;
         Ok(())
     }
 
+    /// Updates the current game_id in the game registry.
     pub fn update_game_registry(ctx: Context<UpdateGameRegistry>, game_id: u64) -> Result<()> {
         let game_registry = &mut ctx.accounts.game_registry;
         game_registry.current_game_id = game_id;
         Ok(())
     }
 
+    /// Initializes a new game account and its associated vault.
+    /// Sets up the game parameters and creates a rent-exempt vault PDA.
     pub fn initialize_game(
         ctx: Context<InitializeGame>,
         _game_id: u64,
@@ -30,31 +35,32 @@ pub mod ctf {
         let game = &mut ctx.accounts.game;
         let clock = Clock::get()?;
 
-    // Calculate the rent-exempt minimum for the vault
-    let rent_exemption = Rent::get()?.minimum_balance(0); // 0 bytes of data
+        // Calculate the rent-exempt minimum for the vault
+        let rent_exemption = Rent::get()?.minimum_balance(0);
 
-    // Create the vault account
-    let create_vault_ix = anchor_lang::solana_program::system_instruction::create_account(
-        &ctx.accounts.admin.key(),
-        &ctx.accounts.vault.key(),
-        rent_exemption,
-        0, // No data space required
-        &anchor_lang::solana_program::system_program::ID,
-    );
-    anchor_lang::solana_program::program::invoke_signed(
-        &create_vault_ix,
-        &[
-            ctx.accounts.admin.to_account_info(),
-            ctx.accounts.vault.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-        ],
-        &[&[
-            b"vault",
-            game.key().as_ref(),
-            &[ctx.bumps.vault],
-        ]],
-    )?;
+        // Create the vault account using a CPI to the system program
+        let create_vault_ix = anchor_lang::solana_program::system_instruction::create_account(
+            &ctx.accounts.admin.key(),
+            &ctx.accounts.vault.key(),
+            rent_exemption,
+            0,
+            &anchor_lang::solana_program::system_program::ID,
+        );
+        anchor_lang::solana_program::program::invoke_signed(
+            &create_vault_ix,
+            &[
+                ctx.accounts.admin.to_account_info(),
+                ctx.accounts.vault.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+            &[&[
+                b"vault",
+                game.key().as_ref(),
+                &[ctx.bumps.vault],
+            ]],
+        )?;
 
+        // Initialize game state
         game.state = GameState::Pending;
         game.start_time = clock.unix_timestamp;
         game.duration = game_duration;
@@ -69,67 +75,62 @@ pub mod ctf {
         Ok(())
     }
 
+    /// Initializes a new player account with default health.
     pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
         let player = &mut ctx.accounts.player;
-
         player.health = 100; // Default health
-
         Ok(())
     }
 
+    /// Starts the game, transitioning its state from Pending to Active.
     pub fn start_game(ctx: Context<UpdateGameState>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
-    
         require!(
             game.state == GameState::Pending,
             CustomError::InvalidStateTransition
         );
-    
         game.state = GameState::Active;
-    
         Ok(())
     }
 
+    /// Starts the final phase of the game, transitioning from Active to FinalPhase.
     pub fn start_final_phase(ctx: Context<UpdateGameState>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
-    
         require!(
             game.state == GameState::Active,
             CustomError::InvalidStateTransition
         );
-    
         game.state = GameState::FinalPhase;
-    
         Ok(())
     }
-    
 
+    /// Ends the game, distributes the prize pool, and marks the game as Completed.
     pub fn end_game(ctx: Context<EndGame>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
         let game_key = game.key();
-    
+
         // Ensure the game is not already completed
         require!(
             game.state != GameState::Completed,
             CustomError::AlreadyCompleted
         );
-    
-        game.state = GameState::Completed; 
-    
+
+        game.state = GameState::Completed;
+
         let winner = game.current_flag_holder;
         let winner_share = game.prize_pool * 80 / 100;
         let protocol_share = game.prize_pool * 20 / 100;
         msg!("Winner share: {}", winner_share);
-    
+
         let vault_seeds = &[
             b"vault".as_ref(),
             game_key.as_ref(),
             &[game.vault_bump],
         ];
-    
-        // Transfer 80% to winner
+
+        // Transfer 80% of the prize pool to the winner
         let winner_transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
-            &ctx.accounts.vault.key(), // Use the vault key
+            &ctx.accounts.vault.key(),
             &winner,
             winner_share,
         );
@@ -141,10 +142,10 @@ pub mod ctf {
             ],
             &[vault_seeds],
         )?;
-    
-        // Transfer protocol share to admin
+
+        // Transfer 20% of the prize pool to the admin (protocol fee)
         let protocol_transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
-            &ctx.accounts.vault.key(), // Use the vault key
+            &ctx.accounts.vault.key(),
             &ctx.accounts.admin.key(),
             protocol_share,
         );
@@ -156,40 +157,38 @@ pub mod ctf {
             ],
             &[vault_seeds]
         )?;
-    
+
         game.prize_pool = 0;
-    
+
         Ok(())
     }
-    
-    
-    
-    // player var is used for player account in game, user var is used for user signing the transaction
+
+    /// Allows a player to capture the flag if the game is active.
+    /// Deducts health, charges a fee, updates the game state, and extends the game if needed.
     pub fn capture_flag(ctx: Context<CaptureFlag>, _game_id: u64) -> Result<()> {
         let game = &mut ctx.accounts.game;
         let user = &mut ctx.accounts.user;
         let player = &mut ctx.accounts.player;
         let clock = Clock::get()?;
-    
+
         // Ensure the game is Active
         require!(game.state == GameState::Active, CustomError::GameNotActive);
-    
-        // (Optional) Check time bounds
+
+        // Check time bounds
         let now = clock.unix_timestamp;
         require!(now < game.start_time + game.duration, CustomError::GameOver);
 
-        // Check if the game is in the final phase and extend the duration if needed
+        // If in the last 5 minutes, extend the game by 5 minutes
         if game.duration - (now - game.start_time) <= 300 {
-            game.duration += 300; // extend by 5 minutes
+            game.duration += 300;
         }
         game.last_capture_time = now;
-    
-        // Ensure player has enough health
+
+        // Calculate dynamic health cost and check player health
         let dynamic_cost = std::cmp::min(
             game.base_capture_cost + 5 * (game.global_captures / 10),
             30,
         );
-        
         require!(player.health >= dynamic_cost, CustomError::NotEnoughHealth);
         player.health -= dynamic_cost;
 
@@ -201,32 +200,30 @@ pub mod ctf {
         } else {
             player.state = PlayerState::Active;
         }
-        
-        
 
-        // Charge lamports from player
+        // Charge lamports from player to vault
         let ix = anchor_lang::solana_program::system_instruction::transfer(
             &user.key(),
-            &ctx.accounts.vault.key(), // send fee to vault
+            &ctx.accounts.vault.key(),
             game.base_fee_lamports,
         );
         anchor_lang::solana_program::program::invoke(
             &ix,
             &[user.to_account_info(), ctx.accounts.vault.to_account_info()],
-        )?;    
-    
+        )?;
+
         // Update game state
         game.current_flag_holder = user.key();
         game.global_captures += 1;
         game.prize_pool += game.base_fee_lamports;
-    
+
         Ok(())
     }
-    
-     
-    
 }
 
+// ---------------------- Account Contexts ----------------------
+
+/// Context for initializing a new game.
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
 pub struct InitializeGame<'info> {
@@ -250,6 +247,7 @@ pub struct InitializeGame<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Context for initializing the game registry.
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
 pub struct InitializeGameRegistry<'info> {
@@ -266,6 +264,7 @@ pub struct InitializeGameRegistry<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Context for updating the game state (start/final phase).
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
 pub struct UpdateGameState<'info> {
@@ -274,6 +273,7 @@ pub struct UpdateGameState<'info> {
     pub admin: Signer<'info>,
 }
 
+/// Context for updating the game registry.
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
 pub struct UpdateGameRegistry<'info> {
@@ -282,6 +282,7 @@ pub struct UpdateGameRegistry<'info> {
     pub admin: Signer<'info>,
 }
 
+/// Context for capturing the flag.
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
 pub struct CaptureFlag<'info> {
@@ -303,6 +304,7 @@ pub struct CaptureFlag<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Context for initializing a player account.
 #[derive(Accounts)]
 pub struct InitializePlayer<'info> {
     #[account(mut)]
@@ -318,6 +320,7 @@ pub struct InitializePlayer<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Context for ending the game and distributing rewards.
 #[derive(Accounts)]
 #[instruction(game_id: u64)]
 pub struct EndGame<'info> {
@@ -341,6 +344,9 @@ pub struct EndGame<'info> {
     pub system_program: Program<'info, System>,
 }
 
+// ---------------------- Account Structures ----------------------
+
+/// Game account storing all game state and configuration.
 #[account]
 #[derive(InitSpace)]
 pub struct Game {
@@ -359,6 +365,7 @@ pub struct Game {
     pub vault_bump: u8,
 }
 
+/// Player account storing player-specific state.
 #[account]
 #[derive(InitSpace)]
 pub struct Player {
@@ -366,6 +373,7 @@ pub struct Player {
     pub state: PlayerState,
 }
 
+/// Game registry account for tracking the current game.
 #[account]
 #[derive(InitSpace)]
 pub struct GameRegistry {
@@ -373,6 +381,9 @@ pub struct GameRegistry {
     pub admin: Pubkey,
 }
 
+// ---------------------- Enums ----------------------
+
+/// Enum representing the state of the game.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
 #[repr(u8)]
 pub enum GameState {
@@ -382,6 +393,7 @@ pub enum GameState {
     Completed,
 }
 
+/// Enum representing the state of a player.
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
 #[repr(u8)]
 pub enum PlayerState {
@@ -390,6 +402,7 @@ pub enum PlayerState {
     Eliminated,
 }
 
+// ---------------------- Custom Errors ----------------------
 
 #[error_code]
 pub enum CustomError {
@@ -408,5 +421,3 @@ pub enum CustomError {
     #[msg("Invalid autth to update game registry.")]
     InvalidAuthToUpdateGameRegistry,
 }
-
-
