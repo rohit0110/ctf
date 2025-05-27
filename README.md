@@ -8,7 +8,7 @@ This project is a fight between users to be the last person holding the flag whe
 
 ## Getting Started in local
 
-Run solana-test-validator
+Run solana-test-validator in terminal
 
 In /ctf
     ```
