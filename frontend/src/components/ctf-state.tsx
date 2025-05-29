@@ -4,11 +4,13 @@ import { program, getGamePDA, type GameAccount } from "../anchor/setup";
 import { ADMIN_PUBLIC_KEY } from "../constant/constant";
 import { useCurrentGameId } from "./GetActiveGameId";
 import { BN } from "@coral-xyz/anchor";
+import { useError } from "./ErrorContext";
 
 export default function GameStateViewer() {
   const { connection } = useConnection();
-  const { gameId, loading } = useCurrentGameId();
+  const { gameId } = useCurrentGameId();
   const [gameData, setGameData] = useState<GameAccount | null>(null);
+  const { showError } = useError();
 
   const gamePDA = useMemo(() => {
     return gameId ? getGamePDA(ADMIN_PUBLIC_KEY, new BN(gameId)) : null;
@@ -24,6 +26,9 @@ export default function GameStateViewer() {
         setGameData(data);
       } catch (error) {
         console.error("Error fetching game account data:", error);
+        showError(
+          error instanceof Error ? error.message : "Failed to fetch game data"
+        );
       }
     };
 
@@ -40,6 +45,9 @@ export default function GameStateViewer() {
           setGameData(decoded);
         } catch (error) {
           console.error("Error decoding game data:", error);
+          showError(
+            error instanceof Error ? error.message : "Failed to decode game data"
+          );
         }
       }
     );
@@ -49,20 +57,22 @@ export default function GameStateViewer() {
     };
   }, [connection, gamePDA]);
 
-  return (
-    <div className="text-lg">
-      {loading ? (
-        <p>Loading game state...</p>
-      ) : gameData && gameId ? (
-        <>
-          <p>Game ID: {gameId}</p>
-          <p>State: {Object.keys(gameData.state)[0]}</p>
-          <p>Prize Pool: {gameData.prizePool.toString()} lamports</p>
-          <p>Current Holder: {gameData.currentFlagHolder.toBase58()}</p>
-        </>
-      ) : (
-        <p>No game data found.</p>
-      )}
-    </div>
-  );
+  return { gameData };
+
+  // return (
+  //   <div className="text-lg">
+  //     {loading ? (
+  //       <p>Loading game state...</p>
+  //     ) : gameData && gameId ? (
+  //       <>
+  //         <p>Game ID: {gameId}</p>
+  //         <p>State: {Object.keys(gameData.state)[0]}</p>
+  //         <p>Prize Pool: {gameData.prizePool.toString()} lamports</p>
+  //         <p>Current Holder: {gameData.currentFlagHolder.toBase58()}</p>
+  //       </>
+  //     ) : (
+  //       <p>No game data found.</p>
+  //     )}
+  //   </div>
+  // );
 }

@@ -16,24 +16,30 @@ import "./App.css";
 // Pages
 import Home from "./pages/Home";
 import AdminPage from "./pages/AdminPage";
+import { AdminRoute } from "./components/AdminRoute";
 import PlayerPage from "./pages/PlayerPage";
+import { ErrorProvider } from "./components/ErrorContext";
+import { ErrorToast } from "./components/ErrorToast";
 
 function App() {
   const network = WalletAdapterNetwork.Devnet;
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-  const wallets = useMemo(() => [], [network]);
+  const wallets = useMemo(() => [], []);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/player" element={<PlayerPage />} />
-            </Routes>
-          </Router>
+          <ErrorProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute> } />
+                <Route path="/player" element={<PlayerPage />} />
+              </Routes>
+            </Router>
+            <ErrorToast />
+          </ErrorProvider>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

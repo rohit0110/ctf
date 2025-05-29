@@ -10,6 +10,7 @@ import {
 } from "../anchor/setup";
 import { ADMIN_PUBLIC_KEY } from "../constant/constant";
 import { BN } from "@coral-xyz/anchor";
+import { useError } from "./ErrorContext";
 
 export default function CaptureFlagButton() {
   const { publicKey, sendTransaction } = useWallet();
@@ -17,6 +18,7 @@ export default function CaptureFlagButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [isHolder, setIsHolder] = useState(false);
   const [gameId, setGameId] = useState<BN | null>(null);
+  const { showError } = useError();
 
   useEffect(() => {
     const fetchGameInfo = async () => {
@@ -34,6 +36,9 @@ export default function CaptureFlagButton() {
         setIsHolder(game.currentFlagHolder.equals(publicKey));
       } catch (err) {
         console.error("Failed to fetch game state:", err);
+        showError(
+          err instanceof Error ? err.message : "Unexpected error occurred"
+        );
       }
     };
 
@@ -82,6 +87,9 @@ export default function CaptureFlagButton() {
       console.log(`Flag captured! https://solana.fm/tx/${txSig}?cluster=devnet-alpha`);
     } catch (err) {
       console.error("Error capturing flag:", err);
+        showError(
+            err instanceof Error ? err.message : "Unexpected error occurred"
+        );
     } finally {
       setIsLoading(false);
     }

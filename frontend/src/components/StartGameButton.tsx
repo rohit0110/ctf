@@ -3,6 +3,7 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { program, getGamePDA} from "../anchor/setup";
 import { BN } from "@coral-xyz/anchor";
 import { ADMIN_PUBLIC_KEY } from "../constant/constant";
+import { useError } from "./ErrorContext";
 
 type Props = {
   gameId: string;
@@ -15,6 +16,8 @@ export default function StartGameButton({ gameId }: Props) {
 
   const parsedGameId = new BN(gameId);
   const gamePDA = getGamePDA(ADMIN_PUBLIC_KEY, parsedGameId);
+
+  const { showError } = useError();
 
   const onClick = async () => {
     if (!publicKey) return;
@@ -35,6 +38,7 @@ export default function StartGameButton({ gameId }: Props) {
       );
     } catch (error) {
       console.error("Error starting game:", error);
+      showError((error instanceof Error ? error.message : "Unexpected error occurred"));
     } finally {
       setIsLoading(false);
     }

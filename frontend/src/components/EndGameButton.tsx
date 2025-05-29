@@ -6,12 +6,15 @@ import { ADMIN_PUBLIC_KEY } from "../constant/constant";
 import { useEffect, useState } from "react";
 import { BN } from "@coral-xyz/anchor";
 import { useConnection } from "@solana/wallet-adapter-react";
+import { useError } from "./ErrorContext";
 
 export default function EndGameButton() {
   const { gameId } = useCurrentGameId();
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   const [currentFlagHolder, setCurrentFlagHolder] = useState<PublicKey | null>(null);
+
+  const { showError } = useError();
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -24,6 +27,9 @@ export default function EndGameButton() {
         setCurrentFlagHolder(gameAccount.currentFlagHolder);
       } catch (err) {
         console.error("Failed to fetch game data:", err);
+        showError(
+          err instanceof Error ? err.message : "Failed to fetch game data"
+        );
       }
     };
 
@@ -58,7 +64,7 @@ export default function EndGameButton() {
       alert("Game ended and prize distributed!");
     } catch (err) {
       console.error("Failed to end game:", err);
-      alert("Failed to end game. See console for details.");
+      showError((err instanceof Error ? err.message : "Unexpected error occurred"));
     }
   };
 

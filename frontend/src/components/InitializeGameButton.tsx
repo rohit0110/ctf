@@ -4,6 +4,7 @@ import { program, getGamePDA, getVaultPDA, getGameRegistryPDA } from "../anchor/
 import { SystemProgram } from "@solana/web3.js";
 import { BN } from "@coral-xyz/anchor";
 import { ADMIN_PUBLIC_KEY } from "../constant/constant";
+import { useError } from "./ErrorContext";
 
 type Props = {
   gameId: string;
@@ -31,6 +32,8 @@ export default function InitializeGameButton({
   const vaultPDA = getVaultPDA(gamePDA);
 
   const gameRegistry = getGameRegistryPDA(ADMIN_PUBLIC_KEY);
+
+  const { showError } = useError();
 
   const onClick = async () => {
   if (!publicKey) return;
@@ -81,6 +84,7 @@ export default function InitializeGameButton({
     console.log(`Registry tx: https://solana.fm/tx/${regTxSig}?cluster=devnet-alpha`);
   } catch (error) {
     console.error("Error initializing game or registry:", error);
+    showError((error instanceof Error ? error.message : "Unexpected error occurred"));
   } finally {
     setIsLoading(false);
   }
