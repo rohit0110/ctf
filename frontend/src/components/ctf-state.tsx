@@ -8,7 +8,7 @@ import { useError } from "./ErrorContext";
 
 export default function GameStateViewer() {
   const { connection } = useConnection();
-  const { gameId, loading } = useCurrentGameId();
+  const { gameId } = useCurrentGameId();
   const [gameData, setGameData] = useState<GameAccount | null>(null);
   const { showError } = useError();
 
@@ -57,20 +57,22 @@ export default function GameStateViewer() {
     };
   }, [connection, gamePDA]);
 
-  return (
-    <div className="text-lg">
-      {loading ? (
-        <p>Loading game state...</p>
-      ) : gameData && gameId ? (
-        <>
-          <p>Game ID: {gameId}</p>
-          <p>State: {Object.keys(gameData.state)[0]}</p>
-          <p>Prize Pool: {gameData.prizePool.toString()} lamports</p>
-          <p>Current Holder: {gameData.currentFlagHolder.toBase58()}</p>
-        </>
-      ) : (
-        <p>No game data found.</p>
-      )}
-    </div>
-  );
+  return { gameData };
+
+  // return (
+  //   <div className="text-lg">
+  //     {loading ? (
+  //       <p>Loading game state...</p>
+  //     ) : gameData && gameId ? (
+  //       <>
+  //         <p>Game ID: {gameId}</p>
+  //         <p>State: {Object.keys(gameData.state)[0]}</p>
+  //         <p>Prize Pool: {gameData.prizePool.toString()} lamports</p>
+  //         <p>Current Holder: {gameData.currentFlagHolder.toBase58()}</p>
+  //       </>
+  //     ) : (
+  //       <p>No game data found.</p>
+  //     )}
+  //   </div>
+  // );
 }
