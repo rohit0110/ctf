@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { program, getPlayerProfilePDA, type PlayerProfileAccount } from "../anchor/setup";
+import { useError } from "./ErrorContext";
 
 export function usePlayerProfile() {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const [profile, setProfile] = useState<PlayerProfileAccount | null>(null);
   const [loading, setLoading] = useState(true);
+  const { showError } = useError();
 
   useEffect(() => {
     if (!publicKey) return;
@@ -21,6 +23,7 @@ export function usePlayerProfile() {
         setProfile(playerData);
       } catch (err) {
         console.error("Failed to fetch player profile:", err);
+        showError(err instanceof Error ? err.message : "Unexpected error occurred");
         setProfile(null);
       } finally {
         setLoading(false);
