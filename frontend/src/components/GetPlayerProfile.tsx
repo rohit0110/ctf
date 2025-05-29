@@ -41,6 +41,9 @@ export function usePlayerProfile() {
           setProfile(decoded);
         } catch (error) {
           console.error("Error decoding player profile:", error);
+            showError(
+                error instanceof Error ? error.message : "Failed to decode player profile"
+            );
         }
       }
     );

@@ -7,11 +7,13 @@ import { ADMIN_PUBLIC_KEY } from "../constant/constant";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { program, getPlayerProfilePDA } from "../anchor/setup";
 import { SystemProgram } from "@solana/web3.js";
+import { useError } from "../components/ErrorContext";
 
 export default function Home() {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   const navigate = useNavigate();
+  const { showError } = useError();
 
   useEffect(() => {
     const initializePlayerProfile = async () => {
@@ -39,6 +41,9 @@ export default function Home() {
         console.log(`Player profile created: https://solana.fm/tx/${txSig}?cluster=devnet-alpha`);
       } catch (err) {
         console.error("Failed to create player profile", err);
+        showError(
+          err instanceof Error ? err.message : "Unexpected error occurred"
+        );
       }
     };
 

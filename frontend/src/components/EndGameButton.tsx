@@ -27,6 +27,9 @@ export default function EndGameButton() {
         setCurrentFlagHolder(gameAccount.currentFlagHolder);
       } catch (err) {
         console.error("Failed to fetch game data:", err);
+        showError(
+          err instanceof Error ? err.message : "Failed to fetch game data"
+        );
       }
     };
 

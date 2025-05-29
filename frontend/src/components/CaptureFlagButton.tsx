@@ -87,6 +87,9 @@ export default function CaptureFlagButton() {
       console.log(`Flag captured! https://solana.fm/tx/${txSig}?cluster=devnet-alpha`);
     } catch (err) {
       console.error("Error capturing flag:", err);
+        showError(
+            err instanceof Error ? err.message : "Unexpected error occurred"
+        );
     } finally {
       setIsLoading(false);
     }
