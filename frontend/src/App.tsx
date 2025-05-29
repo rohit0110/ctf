@@ -16,6 +16,7 @@ import "./App.css";
 // Pages
 import Home from "./pages/Home";
 import AdminPage from "./pages/AdminPage";
+import { AdminRoute } from "./components/AdminRoute";
 import PlayerPage from "./pages/PlayerPage";
 import { ErrorProvider } from "./components/ErrorContext";
 import { ErrorToast } from "./components/ErrorToast";
@@ -33,7 +34,7 @@ function App() {
             <Router>
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute> } />
                 <Route path="/player" element={<PlayerPage />} />
               </Routes>
             </Router>
