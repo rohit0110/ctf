@@ -11,6 +11,16 @@ export default function PlayerPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Player Dashboard</h1>
 
+        <a
+            href="https://faucet.solana.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow"
+            >
+            Faucet Devnet for SOL
+        </a>
+
+
       {/* Game State */}
       <div>
         <GameStateViewer />
