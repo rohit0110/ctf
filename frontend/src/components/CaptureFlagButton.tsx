@@ -52,7 +52,7 @@ export default function CaptureFlagButton() {
     try {
       const gamePDA = getGamePDA(ADMIN_PUBLIC_KEY, gameId);
       const vaultPDA = getVaultPDA(gamePDA);
-      const playerProfilePDA = getPlayerProfilePDA(publicKey);
+      const playerProfilePDA = getPlayerProfilePDA(publicKey, gameId);
 
       console.log("Game ID:", gameId.toString());
         console.log("Game PDA:", gamePDA.toBase58());

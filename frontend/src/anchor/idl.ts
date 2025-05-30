@@ -4,6 +4,10 @@ export type Ctf = {
   "instructions": [
     {
       "name": "initializeGameRegistry",
+      "docs": [
+        "Initializes the game registry account with the given game_id.",
+        "Only the admin who owns the registry can update it."
+      ],
       "accounts": [
         {
           "name": "gameRegistry",
@@ -30,6 +34,9 @@ export type Ctf = {
     },
     {
       "name": "updateGameRegistry",
+      "docs": [
+        "Updates the current game_id in the game registry."
+      ],
       "accounts": [
         {
           "name": "gameRegistry",
@@ -51,6 +58,10 @@ export type Ctf = {
     },
     {
       "name": "initializeGame",
+      "docs": [
+        "Initializes a new game account and its associated vault.",
+        "Sets up the game parameters and creates a rent-exempt vault PDA."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -94,6 +105,9 @@ export type Ctf = {
     },
     {
       "name": "initializePlayer",
+      "docs": [
+        "Initializes a new player account with default health."
+      ],
       "accounts": [
         {
           "name": "user",
@@ -111,10 +125,18 @@ export type Ctf = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "startGame",
+      "docs": [
+        "Starts the game, transitioning its state from Pending to Active."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -136,6 +158,9 @@ export type Ctf = {
     },
     {
       "name": "startFinalPhase",
+      "docs": [
+        "Starts the final phase of the game, transitioning from Active to FinalPhase."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -157,6 +182,9 @@ export type Ctf = {
     },
     {
       "name": "endGame",
+      "docs": [
+        "Ends the game, distributes the prize pool, and marks the game as Completed."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -193,6 +221,10 @@ export type Ctf = {
     },
     {
       "name": "captureFlag",
+      "docs": [
+        "Allows a player to capture the flag if the game is active.",
+        "Deducts health, charges a fee, updates the game state, and extends the game if needed."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -236,6 +268,9 @@ export type Ctf = {
   "accounts": [
     {
       "name": "game",
+      "docs": [
+        "Game account storing all game state and configuration."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -300,6 +335,9 @@ export type Ctf = {
     },
     {
       "name": "player",
+      "docs": [
+        "Player account storing player-specific state."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -318,6 +356,9 @@ export type Ctf = {
     },
     {
       "name": "gameRegistry",
+      "docs": [
+        "Game registry account for tracking the current game."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -336,6 +377,9 @@ export type Ctf = {
   "types": [
     {
       "name": "GameState",
+      "docs": [
+        "Enum representing the state of the game."
+      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -356,6 +400,9 @@ export type Ctf = {
     },
     {
       "name": "PlayerState",
+      "docs": [
+        "Enum representing the state of a player."
+      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -417,6 +464,10 @@ export const IDL: Ctf = {
   "instructions": [
     {
       "name": "initializeGameRegistry",
+      "docs": [
+        "Initializes the game registry account with the given game_id.",
+        "Only the admin who owns the registry can update it."
+      ],
       "accounts": [
         {
           "name": "gameRegistry",
@@ -443,6 +494,9 @@ export const IDL: Ctf = {
     },
     {
       "name": "updateGameRegistry",
+      "docs": [
+        "Updates the current game_id in the game registry."
+      ],
       "accounts": [
         {
           "name": "gameRegistry",
@@ -464,6 +518,10 @@ export const IDL: Ctf = {
     },
     {
       "name": "initializeGame",
+      "docs": [
+        "Initializes a new game account and its associated vault.",
+        "Sets up the game parameters and creates a rent-exempt vault PDA."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -507,6 +565,9 @@ export const IDL: Ctf = {
     },
     {
       "name": "initializePlayer",
+      "docs": [
+        "Initializes a new player account with default health."
+      ],
       "accounts": [
         {
           "name": "user",
@@ -524,10 +585,18 @@ export const IDL: Ctf = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "gameId",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "startGame",
+      "docs": [
+        "Starts the game, transitioning its state from Pending to Active."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -549,6 +618,9 @@ export const IDL: Ctf = {
     },
     {
       "name": "startFinalPhase",
+      "docs": [
+        "Starts the final phase of the game, transitioning from Active to FinalPhase."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -570,6 +642,9 @@ export const IDL: Ctf = {
     },
     {
       "name": "endGame",
+      "docs": [
+        "Ends the game, distributes the prize pool, and marks the game as Completed."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -606,6 +681,10 @@ export const IDL: Ctf = {
     },
     {
       "name": "captureFlag",
+      "docs": [
+        "Allows a player to capture the flag if the game is active.",
+        "Deducts health, charges a fee, updates the game state, and extends the game if needed."
+      ],
       "accounts": [
         {
           "name": "game",
@@ -649,6 +728,9 @@ export const IDL: Ctf = {
   "accounts": [
     {
       "name": "game",
+      "docs": [
+        "Game account storing all game state and configuration."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -713,6 +795,9 @@ export const IDL: Ctf = {
     },
     {
       "name": "player",
+      "docs": [
+        "Player account storing player-specific state."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -731,6 +816,9 @@ export const IDL: Ctf = {
     },
     {
       "name": "gameRegistry",
+      "docs": [
+        "Game registry account for tracking the current game."
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -749,6 +837,9 @@ export const IDL: Ctf = {
   "types": [
     {
       "name": "GameState",
+      "docs": [
+        "Enum representing the state of the game."
+      ],
       "type": {
         "kind": "enum",
         "variants": [
@@ -769,6 +860,9 @@ export const IDL: Ctf = {
     },
     {
       "name": "PlayerState",
+      "docs": [
+        "Enum representing the state of a player."
+      ],
       "type": {
         "kind": "enum",
         "variants": [

@@ -9,7 +9,7 @@ describe("ctf", () => {
 
   const program = anchor.workspace.Ctf as Program<Ctf>;
   const user = anchor.web3.Keypair.generate();
-  const gameId = new anchor.BN(41); // Example game ID, use any unique number
+  const gameId = new anchor.BN(43); // Example game ID, use any unique number
 
   let gamePda: anchor.web3.PublicKey;
   let playerPda: anchor.web3.PublicKey;
@@ -23,7 +23,7 @@ describe("ctf", () => {
     )[0];
 
     playerPda = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("player"), user.publicKey.toBuffer()],
+      [Buffer.from("player"), user.publicKey.toBuffer(), gameIdBytes],
       program.programId
     )[0];
 
@@ -54,7 +54,7 @@ describe("ctf", () => {
 
     // Initialize Player
     await program.methods
-      .initializePlayer()
+      .initializePlayer(gameId)
       .accounts({
         user: user.publicKey,
         player: playerPda,

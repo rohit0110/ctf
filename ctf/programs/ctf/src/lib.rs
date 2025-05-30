@@ -76,7 +76,7 @@ pub mod ctf {
     }
 
     /// Initializes a new player account with default health.
-    pub fn initialize_player(ctx: Context<InitializePlayer>) -> Result<()> {
+    pub fn initialize_player(ctx: Context<InitializePlayer>, _game_id: u64) -> Result<()> {
         let player = &mut ctx.accounts.player;
         player.health = 100; // Default health
         Ok(())
@@ -297,7 +297,7 @@ pub struct CaptureFlag<'info> {
     pub vault: SystemAccount<'info>,
     #[account(mut)]
     pub user: Signer<'info>,
-    #[account(mut, seeds = [b"player", user.key().as_ref()], bump)]
+    #[account(mut, seeds = [b"player", user.key().as_ref(), game_id.to_le_bytes().as_ref()], bump)]
     pub player: Account<'info, Player>,
     #[account(mut)]
     pub admin: SystemAccount<'info>,
@@ -306,6 +306,7 @@ pub struct CaptureFlag<'info> {
 
 /// Context for initializing a player account.
 #[derive(Accounts)]
+#[instruction(game_id: u64)]
 pub struct InitializePlayer<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
@@ -313,7 +314,7 @@ pub struct InitializePlayer<'info> {
         init,
         payer = user,
         space = 8 + Player::INIT_SPACE,
-        seeds = [b"player", user.key().as_ref()],
+        seeds = [b"player", user.key().as_ref(), game_id.to_le_bytes().as_ref()],
         bump
     )]
     pub player: Account<'info, Player>,

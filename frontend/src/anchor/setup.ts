@@ -41,11 +41,12 @@ function getGameRegistryPDA(admin: PublicKey): PublicKey {
 }
 
 // Utility to get Player Profile PDA
-function getPlayerProfilePDA(user: PublicKey): PublicKey {
+function getPlayerProfilePDA(user: PublicKey, gameId: BN): PublicKey {
   return PublicKey.findProgramAddressSync(
     [
       Buffer.from("player"),
-      user.toBuffer()
+      user.toBuffer(),
+      gameId.toArrayLike(Buffer, "le", 8),
     ],
       PROGRAM_ID
   )[0];

@@ -18,6 +18,7 @@ import Home from "./pages/Home";
 import AdminPage from "./pages/AdminPage";
 import { AdminRoute } from "./components/AdminRoute";
 import PlayerPage from "./pages/PlayerPage";
+import GamePage from "./pages/GamePage";
 import { ErrorProvider } from "./components/ErrorContext";
 import { ErrorToast } from "./components/ErrorToast";
 
@@ -36,6 +37,8 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute> } />
                 <Route path="/player" element={<PlayerPage />} />
+                <Route path="/game" element={<GamePage />} />
+                {/* Add more routes as needed */}
               </Routes>
             </Router>
             <ErrorToast />
