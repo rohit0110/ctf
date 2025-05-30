@@ -102,22 +102,25 @@ export default function GamePage() {
       </div>
 
       {/* Player Profile */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">Player Profile</h2>
-        {profileLoading ? (
-          <p>Loading profile...</p>
-        ) : profile ? (
-          <div className="border p-4 rounded bg-gray-100">
-            <p>Health: {profile.health?.toString?.() ?? "N/A"}</p>
-            <p>
-              State:{" "}
-              {profile.state ? Object.keys(profile.state)[0] : "Unknown"}
-            </p>
-          </div>
-        ) : (
-          <p className="text-red-500">No player profile found.</p>
-        )}
-      </div>
+        <div className="mt-6">
+            <h2 className="text-2xl font-bold mb-3 text-indigo-700">Player Profile</h2>
+            {profileLoading ? (
+                <p className="text-gray-500 italic">Loading profile...</p>
+            ) : profile ? (
+                <div className="bg-gray-100 border border-indigo-400 p-5 rounded-lg shadow-md">
+                <p className="text-indigo-900 font-semibold">Health: <span className="font-normal">{profile.health?.toString?.() ?? "N/A"}</span></p>
+                <p className="text-indigo-900 font-semibold mt-2">
+                    State:{" "}
+                    <span className="font-normal">
+                    {profile.state ? Object.keys(profile.state)[0] : "Unknown"}
+                    </span>
+                </p>
+                </div>
+            ) : (
+                <p className="text-red-600 font-semibold">No player profile found.</p>
+            )}
+        </div>
+
     </div>
   );
 }
